@@ -1,0 +1,14 @@
+{
+  "name": "zhigangzong-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/frontend-dev.mjs",
+    "test": "node --test frontend-tests/*.test.mjs",
+    "check": "node scripts/check-frontend.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,53 @@
+# 以下业务请求需要先登录并保留 Session Cookie；写请求还需携带 /api/auth/csrf 返回的请求头。
+# 推荐使用 scripts/smoke.ps1 或前端页面执行完整认证流程，详见 docs/local-workflow.md。
+
+### 数据库健康检查
+GET http://127.0.0.1:8080/api/health
+
+### 全部 P0 模块与待实现状态
+GET http://127.0.0.1:8080/api/modules
+
+### 岗位分页
+GET http://127.0.0.1:8080/api/jobs?page=1&size=20
+
+### 基础统计
+GET http://127.0.0.1:8080/api/statistics/overview
+
+### 推荐功能尚未实现，预期 HTTP 501
+GET http://127.0.0.1:8080/api/recommendations?studentId=1
+
+### 创建学校（会写入数据；重复 code 返回 409）
+POST http://127.0.0.1:8080/api/schools
+Content-Type: application/json
+
+{
+  "name": "示例学院所属学校",
+  "code": "DEMO-SCHOOL"
+}
+
+### 创建企业（初始状态 PENDING）
+POST http://127.0.0.1:8080/api/enterprises
+Content-Type: application/json
+
+{
+  "name": "示例合作企业",
+  "creditCode": "DEMO-ENTERPRISE",
+  "contactName": "示例联系人"
+}
+
+### 下面 enterpriseId 请替换为创建企业返回的 id；初始岗位为 PENDING / DRAFT
+POST http://127.0.0.1:8080/api/jobs
+Content-Type: application/json
+
+{
+  "enterpriseId": 1,
+  "title": "Java 后端实习生",
+  "description": "参与实习管理平台开发",
+  "city": "上海",
+  "requiredMajor": "计算机科学与技术",
+  "requiredSkills": "Java,MySQL",
+  "headcount": 2,
+  "startDate": "2027-01-01",
+  "endDate": "2027-06-30",
+  "daysPerWeek": 5
+}

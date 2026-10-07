@@ -1,0 +1,7 @@
+/target/
+/.local/
+.idea/
+*.iml
+.vscode/
+node_modules/
+*.log

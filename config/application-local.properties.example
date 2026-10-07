@@ -1,0 +1,9 @@
+# Copy to .local/application-local.properties (ignored by Git).
+# Alternatively set DB_USERNAME and DB_PASSWORD in the process environment.
+spring.datasource.username=root
+spring.datasource.password=replace_with_your_local_password
+# First login: opt in ONLY for an empty auth_account table.
+# Set a private password of 12+ characters (at most 72 UTF-8 bytes).
+# Existing accounts are never reset. Username: admin.
+app.bootstrap.enabled=false
+app.bootstrap.password=

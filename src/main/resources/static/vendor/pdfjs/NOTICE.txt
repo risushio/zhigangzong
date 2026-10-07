@@ -1,0 +1,1 @@
+PDF.js 5.6.205 from Mozilla pdfjs-dist (Apache-2.0). Bundled offline for file preview; no CDN requests.
