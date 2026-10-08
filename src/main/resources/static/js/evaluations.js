@@ -1,0 +1,14 @@
+import {request} from './api.js';
+import {escape as e,statusBadge,button,toast,formatDate} from './ui.js';
+const names={STUDENT:'学生自评',ENTERPRISE:'企业评价',TEACHER:'教师评分'};
+export async function showEvaluations(id,user,openModal,refresh,helpers){
+ const {field,rows,cells,showForm}=helpers,d=await request(`/portal/placements/${id}/evaluations`),p=d.placement,type=({STUDENT:'STUDENT',TEACHER:'TEACHER',ENTERPRISE_MENTOR:'ENTERPRISE'})[user.role];
+ const own=d.evaluations.find(v=>v.type===type),current=!p.terminationRequestId&&!p.replacementPlacementId&&p.archiveStatus!=='APPROVED',editable=current&&type&&p.schoolApprovalStatus==='APPROVED'&&p.arrivalStatus==='ARRIVED'&&(!own||own.status!=='SUBMITTED'||own.evaluatorId!==Number(user.id));
+ const reload=()=>showEvaluations(id,user,openModal,refresh,helpers);
+ openModal('三方评价与总成绩',`<h3>${e(p.positionTitle)}</h3><p>三方评价分别提交，原稿与每次提交保留历史。已提交评分须学校退回后补充；总成绩采用批次权重，学校复核与结项另行办理。</p>${d.calculation?`<p>待复核总成绩：<strong>${e(d.calculation.total)}</strong> · ${d.calculation.passed?'达到及格线':'未达到及格线'} · 规则版本 ${e(d.calculation.policyVersion)} / 及格线 ${e(d.calculation.policy.passScore)}</p>`:`<p>${e(d.notReady)}</p>`}<div class="form-actions">${editable?button('保存本方评价','data-evaluation="save"'):''}${current&&own&&own.evaluatorId===Number(user.id)&&['DRAFT','RETURNED'].includes(own.status)?button('提交本方评价','data-evaluation="submit"'):''}</div>${rows(['评价方 / 人员','分数 / 状态','意见','操作'],d.evaluations,v=>cells([e(names[v.type])+' / #'+e(v.evaluatorId),e(v.score)+' / '+statusBadge(v.status),e(v.comment),button('评价内容与历史',`data-evaluation="history" data-type="${e(v.type)}"`)]))}`);
+ document.querySelector('#modal').querySelectorAll('[data-evaluation]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{
+  if(b.dataset.evaluation==='save')return showForm(openModal,names[type]+'草稿',field('score','评分（0–100）',{required:true,type:'number',value:own?.score??''})+field('comment','评价意见',{required:true,type:'textarea',max:4000,value:own?.comment||''}),async f=>{await request(`/portal/placements/${id}/evaluations`,{method:'PUT',body:{score:Number(f.get('score')),comment:f.get('comment').trim()}});await refresh();await reload();},'保存评价草稿','最多两位小数；保存后须另行提交。');
+  if(b.dataset.evaluation==='submit')return showForm(openModal,'提交本方评价','',async()=>{await request(`/portal/placements/${id}/evaluations/submit`,{method:'POST'});await refresh();await reload();},'确认提交评价','提交后不能直接修改；学校退回后可补充重新提交。');
+  const h=await request(`/portal/placements/${id}/evaluations/${b.dataset.type}`);openModal('评价内容与历史',`<h3>${e(names[h.evaluation.type])}</h3><p>${e(h.evaluation.score)} · ${statusBadge(h.evaluation.status)}</p><p>${e(h.evaluation.comment)}</p>${rows(['操作 / 时间','操作人','意见 / 内容快照'],h.events,v=>cells([e(v.action)+' / '+e(formatDate(v.created_at)),e(v.actorName),e(v.note)+'<details><summary>评价快照</summary><pre>'+e(v.snapshot)+'</pre></details>']))}`);
+ }catch(err){toast(err.message);}finally{b.disabled=false;}});
+}

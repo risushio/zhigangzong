@@ -23,7 +23,7 @@ public class ProcessService {
         return mapper.mentors(a.schoolId(),p.getEnterpriseId());
     }
     public InternshipPlacement assign(long id,Mentors r) {
-        var a=portal.actor("SCHOOL_ADMIN");var p=portal.accessiblePlacement(id,a);
+        var a=portal.actor("SCHOOL_ADMIN");var p=portal.accessiblePlacement(id,a);portal.requireCurrent(p);
         if(!"APPROVED".equals(p.getSchoolApprovalStatus()))throw BusinessException.badRequest("学校批准后才能分配双导师");
         var eligible=mapper.mentors(a.schoolId(),p.getEnterpriseId());
         boolean teacher=eligible.stream().anyMatch(u->Objects.equals(((Number)u.get("id")).longValue(),r.teacherId()) && "TEACHER".equals(u.get("role")));
@@ -37,7 +37,7 @@ public class ProcessService {
         return accounts.lockPlacement(id);
     }
     public InternshipPlacement arrive(long id,Arrival r) {
-        var a=portal.actor("ENTERPRISE_MENTOR");var p=portal.accessiblePlacement(id,a);
+        var a=portal.actor("ENTERPRISE_MENTOR");var p=portal.accessiblePlacement(id,a);portal.requireCurrent(p);
         if(!"APPROVED".equals(p.getSchoolApprovalStatus()) || p.getTeacherId()==null || p.getEnterpriseMentorId()==null)throw BusinessException.badRequest("需学校批准并完成双导师分配");
         if(!"NOT_ARRIVED".equals(p.getArrivalStatus()))throw BusinessException.badRequest("已确认到岗，不能重复办理");
         if(r.arrivalDate().isBefore(p.getStartDate()) || r.arrivalDate().isAfter(p.getEndDate()) || r.arrivalDate().isAfter(LocalDate.now()))throw BusinessException.badRequest("到岗日期必须在实习期间且不能晚于今天");
@@ -53,6 +53,7 @@ public class ProcessService {
         return Map.of("placement",p,"events",mapper.events(id),"reports",reports);
     }
     private void active(InternshipPlacement p) {
+        portal.requireCurrent(p);
         if(!"APPROVED".equals(p.getSchoolApprovalStatus()) || !"ARRIVED".equals(p.getArrivalStatus()))throw BusinessException.badRequest("学校批准且确认到岗后才能填写周报");
     }
     private void fill(ProgressReport report,Report r,InternshipPlacement p) {

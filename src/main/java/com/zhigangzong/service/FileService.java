@@ -58,7 +58,7 @@ public class FileService {
         var a=portal.actor("STUDENT");
         if(!List.of("RESUME","AGREEMENT","INSURANCE","RESULT","OTHER").contains(kind))throw BusinessException.badRequest("材料类型无效");
         if(kind.equals("RESUME")){if(placement!=null)throw BusinessException.badRequest("简历请上传至个人文件库");}
-        else {if(placement==null)throw BusinessException.badRequest("实习材料必须绑定实习记录");portal.accessiblePlacement(placement,a);}
+        else {if(placement==null)throw BusinessException.badRequest("实习材料必须绑定实习记录");portal.requireCurrent(portal.accessiblePlacement(placement,a));}
         String name=upload.getOriginalFilename();
         if(name==null||name.isBlank()||name.length()>180||name.chars().anyMatch(Character::isISOControl)||name.matches(".*[\\\\/:<>\"|?*\\p{Cntrl}].*"))throw BusinessException.badRequest("文件名无效或过长");
         if(upload.isEmpty())throw BusinessException.badRequest("请选择非空文件");
@@ -91,6 +91,7 @@ public class FileService {
     }
     public StoredFile review(long id,FileReview r) {
         var a=portal.actor("SCHOOL_ADMIN","TEACHER");var f=accessible(id,a);if(f.getPlacementId()==null)throw BusinessException.badRequest("个人简历不进入实习材料审核");
+        portal.requireCurrent(portal.accessiblePlacement(f.getPlacementId(),a));
         mapper.review(id,r.decision(),r.comment());mapper.materialReview(id,r.decision(),r.comment());mapper.reviewEvent(id,a.id(),r.decision(),r.comment());audit.audit(a.id(),"FILE_REVIEW","stored_file",id,r.decision()+"："+r.comment());accounts.notifyUser(f.getOwnerUserId(),"实习材料审核结果",f.getOriginalName()+"："+r.comment(),"FILE",id);return mapper.file(id);
     }
 }

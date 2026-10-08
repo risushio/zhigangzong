@@ -26,8 +26,8 @@ export const icon=(name,cls='')=>'<svg class="icon '+cls+'" viewBox="0 0 24 24" 
 export const button=(text,attrs='',kind='secondary')=>'<button class="btn '+kind+' rounded-lg font-medium transition-all duration-300" '+attrs+'>'+text+'</button>';
 export const cardClass='panel backdrop-blur rounded-xl border border-white/5';
 export function statusBadge(value){
-  const labels={UPLOADED:'已上传',PENDING:'待审核',APPROVED:'已通过',REJECTED:'未通过',SUSPENDED:'合作暂停',DRAFT:'草稿',PUBLISHED:'已发布',OFFLINE:'已下架',OPEN:'待处理',IN_PROGRESS:'处理中',RESOLVED:'已解决',CLOSED:'已关闭',RETURNED:'已退回',NOT_ARRIVED:'未到岗',ARRIVED:'已到岗',APPLIED:'已投递',INTERVIEW:'面试中',OFFERED:'待确认录用',ACCEPTED:'已接受',WITHDRAWN:'已撤回',SUBMITTED:'待批阅',REVIEWED:'已批阅',STUDENT:'学生',TEACHER:'指导教师',RECRUITER:'企业招聘人员',ENTERPRISE_MENTOR:'企业导师',DEPARTMENT_ADMIN:'学院管理员',SCHOOL_ADMIN:'校级管理员',PLATFORM:'平台岗位',SELF:'自主申报'};
-  const tone=['APPROVED','PUBLISHED','RESOLVED','ARRIVED','REVIEWED'].includes(value)?'teal':['REJECTED','SUSPENDED','RETURNED'].includes(value)?'violet':['DRAFT','OFFLINE','CLOSED'].includes(value)?'muted':'blue';
+  const labels={ARCHIVED:'已结项归档',TERMINATED:'已终止',UPLOADED:'已上传',PENDING:'待审核',APPROVED:'已通过',REJECTED:'未通过',SUSPENDED:'合作暂停',DRAFT:'草稿',PUBLISHED:'已发布',OFFLINE:'已下架',OPEN:'待处理',IN_PROGRESS:'处理中',RESOLVED:'已解决',CLOSED:'已关闭',RETURNED:'已退回',NOT_ARRIVED:'未到岗',ARRIVED:'已到岗',APPLIED:'已投递',INTERVIEW:'面试中',OFFERED:'待确认录用',ACCEPTED:'已接受',WITHDRAWN:'已撤回',SUBMITTED:'待批阅',REVIEWED:'已批阅',STUDENT:'学生',TEACHER:'指导教师',RECRUITER:'企业招聘人员',ENTERPRISE_MENTOR:'企业导师',DEPARTMENT_ADMIN:'学院管理员',SCHOOL_ADMIN:'校级管理员',PLATFORM:'平台岗位',SELF:'自主申报'};
+  const tone=['APPROVED','PUBLISHED','RESOLVED','ARRIVED','REVIEWED'].includes(value)?'teal':['REJECTED','SUSPENDED','RETURNED'].includes(value)?'violet':['DRAFT','OFFLINE','CLOSED','TERMINATED','ARCHIVED'].includes(value)?'muted':'blue';
   return value?'<span class="badge '+tone+'"><i></i>'+escape(labels[value]||value)+'</span>':'<span class="muted">—</span>';
 }
 export const loading=()=>'<div class="state" role="status"><span class="spinner"></span><h3>正在读取数据</h3><p>请稍候，正在连接实习工作空间。</p></div>';

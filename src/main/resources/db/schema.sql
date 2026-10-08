@@ -267,6 +267,38 @@ CREATE TABLE IF NOT EXISTS attendance_record (
     CHECK (record_type IN ('CHECK_IN','LEAVE','MAKE_UP','APPEAL'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS placement_attendance_policy (
+    placement_id BIGINT NOT NULL PRIMARY KEY,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (placement_id) REFERENCES internship_placement(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS attendance_policy_event (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    placement_id BIGINT NOT NULL,
+    actor_id BIGINT NOT NULL,
+    enabled BOOLEAN NOT NULL,
+    note VARCHAR(480) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (placement_id) REFERENCES internship_placement(id),
+    FOREIGN KEY (actor_id) REFERENCES user_account(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS attendance_record_event (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    record_id BIGINT NOT NULL,
+    actor_id BIGINT NOT NULL,
+    action VARCHAR(24) NOT NULL,
+    attendance_date DATE NOT NULL,
+    record_type VARCHAR(24) NOT NULL,
+    note VARCHAR(480) NOT NULL,
+    feedback VARCHAR(480),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (record_id) REFERENCES attendance_record(id),
+    FOREIGN KEY (actor_id) REFERENCES user_account(id),
+    CHECK (action IN ('PENDING','APPROVED','RETURNED','REJECTED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS change_request (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     placement_id BIGINT NOT NULL,
@@ -281,6 +313,40 @@ CREATE TABLE IF NOT EXISTS change_request (
     FOREIGN KEY (placement_id) REFERENCES internship_placement(id),
     FOREIGN KEY (reviewer_id) REFERENCES user_account(id),
     CHECK (change_type IN ('EXTEND','CHANGE_JOB','CHANGE_ENTERPRISE','TERMINATE'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS change_request_event (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    request_id BIGINT NOT NULL,
+    actor_id BIGINT NOT NULL,
+    action VARCHAR(24) NOT NULL,
+    original_snapshot TEXT NOT NULL,
+    requested_snapshot TEXT NOT NULL,
+    reason VARCHAR(480) NOT NULL,
+    review_comment VARCHAR(480),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (request_id) REFERENCES change_request(id),
+    FOREIGN KEY (actor_id) REFERENCES user_account(id),
+    CHECK (action IN ('PENDING','APPROVED','RETURNED','REJECTED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS placement_replacement (
+    previous_placement_id BIGINT NOT NULL PRIMARY KEY,
+    next_placement_id BIGINT NOT NULL UNIQUE,
+    request_id BIGINT NOT NULL UNIQUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (previous_placement_id) REFERENCES internship_placement(id),
+    FOREIGN KEY (next_placement_id) REFERENCES internship_placement(id),
+    FOREIGN KEY (request_id) REFERENCES change_request(id),
+    CHECK (previous_placement_id <> next_placement_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS placement_termination (
+    placement_id BIGINT NOT NULL PRIMARY KEY,
+    request_id BIGINT NOT NULL UNIQUE,
+    terminated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (placement_id) REFERENCES internship_placement(id),
+    FOREIGN KEY (request_id) REFERENCES change_request(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS guidance_record (
@@ -466,3 +532,38 @@ CREATE TABLE IF NOT EXISTS file_review_event (
  FOREIGN KEY (file_id) REFERENCES stored_file(id), FOREIGN KEY (actor_id) REFERENCES user_account(id),
  CHECK (decision IN ('APPROVED','RETURNED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS student_case (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ school_id BIGINT NOT NULL, student_id BIGINT NOT NULL, placement_id BIGINT,
+ kind VARCHAR(24) NOT NULL, title VARCHAR(160) NOT NULL, description TEXT NOT NULL,
+ owner_id BIGINT, status VARCHAR(24) NOT NULL DEFAULT 'OPEN', resolution TEXT,
+ student_confirmed BOOLEAN NOT NULL DEFAULT FALSE, rule_key VARCHAR(160), evidence TEXT,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (school_id) REFERENCES school(id), FOREIGN KEY (student_id) REFERENCES student_profile(id),
+ FOREIGN KEY (placement_id) REFERENCES internship_placement(id), FOREIGN KEY (owner_id) REFERENCES user_account(id),
+ CHECK (kind IN ('HELP','WARNING')), CHECK (status IN ('OPEN','IN_PROGRESS','RESOLVED','CLOSED')),
+ INDEX idx_case_scope (school_id,student_id,owner_id), INDEX idx_case_rule (student_id,rule_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS student_case_event (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, case_id BIGINT NOT NULL, actor_id BIGINT NOT NULL,
+ action VARCHAR(32) NOT NULL, note TEXT NOT NULL, snapshot TEXT NOT NULL,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (case_id) REFERENCES student_case(id), FOREIGN KEY (actor_id) REFERENCES user_account(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS batch_warning_policy (batch_id BIGINT PRIMARY KEY, settings TEXT NOT NULL, FOREIGN KEY (batch_id) REFERENCES internship_batch(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS batch_warning_policy_event (id BIGINT AUTO_INCREMENT PRIMARY KEY,batch_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,settings TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(batch_id) REFERENCES internship_batch(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS warning_detection (detection_key VARCHAR(160) PRIMARY KEY,batch_id BIGINT NOT NULL,active BOOLEAN NOT NULL,episode INT NOT NULL,case_id BIGINT NOT NULL,FOREIGN KEY(batch_id) REFERENCES internship_batch(id),FOREIGN KEY(case_id) REFERENCES student_case(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS warning_scan (id BIGINT AUTO_INCREMENT PRIMARY KEY,batch_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,checked_students INT NOT NULL,created_cases INT NOT NULL,settings TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(batch_id) REFERENCES internship_batch(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS batch_grade_policy(batch_id BIGINT PRIMARY KEY,version INT NOT NULL,settings TEXT NOT NULL,FOREIGN KEY(batch_id) REFERENCES internship_batch(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS batch_grade_policy_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,batch_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,version INT NOT NULL,settings TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(batch_id) REFERENCES internship_batch(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS evaluation_entry(id BIGINT AUTO_INCREMENT PRIMARY KEY,placement_id BIGINT NOT NULL,evaluator_id BIGINT NOT NULL,type VARCHAR(24) NOT NULL,status VARCHAR(24) NOT NULL,score DECIMAL(5,2) NOT NULL,comment TEXT NOT NULL,revision INT NOT NULL,UNIQUE KEY uk_evaluation_entry(placement_id,type),FOREIGN KEY(placement_id) REFERENCES internship_placement(id),FOREIGN KEY(evaluator_id) REFERENCES user_account(id),CHECK(type IN ('STUDENT','ENTERPRISE','TEACHER')),CHECK(status IN ('DRAFT','SUBMITTED','RETURNED')),CHECK(score BETWEEN 0 AND 100)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS evaluation_entry_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,entry_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,action VARCHAR(32) NOT NULL,note TEXT NOT NULL,snapshot TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(entry_id) REFERENCES evaluation_entry(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS grade_review_request(id BIGINT AUTO_INCREMENT PRIMARY KEY,placement_id BIGINT NOT NULL,reason TEXT NOT NULL,status VARCHAR(24) NOT NULL,original_snapshot TEXT NOT NULL,requested_snapshot TEXT NOT NULL,reviewer_id BIGINT,review_comment TEXT,FOREIGN KEY(placement_id) REFERENCES internship_placement(id),FOREIGN KEY(reviewer_id) REFERENCES user_account(id),CHECK(status IN ('PENDING','RETURNED','APPROVED','REJECTED'))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS grade_review_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,request_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,action VARCHAR(24) NOT NULL,reason TEXT NOT NULL,comment TEXT,snapshot TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(request_id) REFERENCES grade_review_request(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS placement_archive(id BIGINT AUTO_INCREMENT PRIMARY KEY,placement_id BIGINT NOT NULL UNIQUE,result_file_id BIGINT NOT NULL,summary TEXT NOT NULL,status VARCHAR(24) NOT NULL,snapshot LONGTEXT NOT NULL,reviewer_id BIGINT,review_comment TEXT,archived_at DATETIME,FOREIGN KEY(placement_id) REFERENCES internship_placement(id),FOREIGN KEY(result_file_id) REFERENCES stored_file(id),FOREIGN KEY(reviewer_id) REFERENCES user_account(id),CHECK(status IN ('PENDING','RETURNED','APPROVED'))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS placement_archive_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,archive_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,action VARCHAR(24) NOT NULL,summary TEXT NOT NULL,result_file_id BIGINT NOT NULL,comment TEXT,snapshot LONGTEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(archive_id) REFERENCES placement_archive(id),FOREIGN KEY(actor_id) REFERENCES user_account(id),FOREIGN KEY(result_file_id) REFERENCES stored_file(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

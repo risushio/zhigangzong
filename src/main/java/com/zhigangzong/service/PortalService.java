@@ -151,11 +151,19 @@ public class PortalService {
         var p=mapper.lockPlacement(id);if(p==null)throw BusinessException.notFound("实习记录");scope(a,students.findById(p.getStudentId()),p.getEnterpriseId());
         if((a.role().equals("TEACHER") && !Objects.equals(p.getTeacherId(),a.id())) || (a.role().equals("ENTERPRISE_MENTOR") && (!Objects.equals(p.getEnterpriseMentorId(),a.id()) || !Objects.equals(p.getEnterpriseId(),a.enterpriseId())))) throw BusinessException.notFound("实习记录");return p;
     }
+    void requireNotReplaced(InternshipPlacement p) {
+        if("APPROVED".equals(p.getArchiveStatus()))throw BusinessException.badRequest("实习已结项归档，仅可查看历史或导出档案");
+        if(p.getReplacementPlacementId()!=null)throw BusinessException.badRequest("原实习已被新安排替代，仅可查看历史，请在新实习记录办理");
+    }
+    void requireCurrent(InternshipPlacement p) {
+        requireNotReplaced(p);
+        if(p.getTerminationRequestId()!=null)throw BusinessException.badRequest("实习已终止，仅可查看历史；继续实习请申请关联新安排");
+    }
     public Map<String,Object> placement(long id) {
         var a=actor("STUDENT","SCHOOL_ADMIN","TEACHER","ENTERPRISE_MENTOR");var p=accessiblePlacement(id,a);var result=new LinkedHashMap<String,Object>();result.put("placement",p);result.put("approvals",mapper.approvals(id));var detail=selfPlacements.detail(id);if(detail!=null){result.put("selfDeclaration",detail);result.put("selfHistory",selfPlacements.events(id));}return result;
     }
     public InternshipPlacement approve(long id,Approval r) {
-        var a=actor("SCHOOL_ADMIN");var p=accessiblePlacement(id,a);
+        var a=actor("SCHOOL_ADMIN");var p=accessiblePlacement(id,a);requireCurrent(p);
         if(!p.getSchoolApprovalStatus().equals("PENDING"))throw BusinessException.badRequest("仅待审批申请可以处理");
         if("SELF".equals(p.getSource()) && "APPROVED".equals(r.decision())){var e=management.lockEnterprise(p.getEnterpriseId());if(e==null || List.of("SUSPENDED","REJECTED").contains(e.getReviewStatus()))throw BusinessException.badRequest("单位已暂停或未通过审核，不能批准实习");}
         mapper.approval(id,r.decision());mapper.approvalRecord(id,a.id(),r.decision(),r.comment());
@@ -164,7 +172,7 @@ public class PortalService {
         return mapper.lockPlacement(id);
     }
     public InternshipPlacement resubmit(long id,Placement r) {
-        var a=actor("STUDENT");var p=accessiblePlacement(id,a);
+        var a=actor("STUDENT");var p=accessiblePlacement(id,a);requireCurrent(p);
         if(!"PLATFORM".equals(p.getSource()))throw BusinessException.badRequest("自主申报请使用自主申报补充入口");
         if(!p.getSchoolApprovalStatus().equals("RETURNED"))throw BusinessException.badRequest("只有退回的申请可以补充提交");
         if(!Objects.equals(p.getApplicationId(),r.applicationId())||!Objects.equals(p.getBatchId(),r.batchId()))throw BusinessException.badRequest("补充提交不能更换原申请或批次");

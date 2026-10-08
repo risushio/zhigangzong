@@ -4,7 +4,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/** 出勤与补签。当前仅提供基础数据结构，业务状态流转在后续阶段实现。 */
+/** 签到、单日请假与补签；每次申请和审批保留独立历史。 */
 @Data
 public class AttendanceRecord {
     private Long id;

@@ -3,7 +3,7 @@ package com.zhigangzong.entity;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-/** 实习变更历史。当前仅提供基础数据结构，业务状态流转在后续阶段实现。 */
+/** 实习变更申请；延期支持审批、原日期快照及独立操作历史。 */
 @Data
 public class ChangeRequest {
     private Long id;

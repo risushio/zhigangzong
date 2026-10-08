@@ -8,6 +8,12 @@ import java.time.LocalDateTime;
 @Data
 public class InternshipPlacement {
     private Long id;
+    private Long previousPlacementId;
+    private Long replacementPlacementId;
+    private Long archiveId;
+    private String archiveStatus;
+    private Long terminationRequestId;
+    private LocalDateTime terminatedAt;
     private Long studentId;
     private Long batchId;
     private String source;

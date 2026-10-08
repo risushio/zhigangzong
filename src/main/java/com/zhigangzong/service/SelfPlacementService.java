@@ -36,7 +36,7 @@ public class SelfPlacementService {
         audit.audit(a.id(),"SELF_DRAFT","internship_placement",p.getId(),"保存自主实习申报草稿");return accounts.lockPlacement(p.getId());
     }
     private void fill(InternshipPlacement p,SelfPlacement r){p.setPositionTitle(r.positionTitle());p.setStartDate(r.startDate());p.setEndDate(r.endDate());}
-    private void editable(InternshipPlacement p){if(!"SELF".equals(p.getSource()) || !List.of("DRAFT","RETURNED").contains(p.getSchoolApprovalStatus()) || !"NOT_ARRIVED".equals(p.getArrivalStatus()))throw BusinessException.badRequest("仅自主申报草稿和退回申请可修改或提交");}
+    private void editable(InternshipPlacement p){portal.requireCurrent(p);if(!"SELF".equals(p.getSource()) || !List.of("DRAFT","RETURNED").contains(p.getSchoolApprovalStatus()) || !"NOT_ARRIVED".equals(p.getArrivalStatus()))throw BusinessException.badRequest("仅自主申报草稿和退回申请可修改或提交");}
     public InternshipPlacement save(long id,SelfPlacement r) {
         var a=portal.actor("STUDENT");var p=portal.accessiblePlacement(id,a);editable(p);dates(r,a);
         if(!Objects.equals(p.getBatchId(),r.batchId()))throw BusinessException.badRequest("补充申报不能更换批次");
