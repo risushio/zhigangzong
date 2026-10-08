@@ -11,7 +11,7 @@ try {
         & (Join-Path $PSScriptRoot 'maven.ps1') package
         if ($LASTEXITCODE -ne 0) { throw 'Maven build failed.' }
     }
-    $taskJar = Join-Path $taskRoot 'target\zhigangzong-1.1.0.jar'
+    $taskJar = Join-Path $taskRoot 'target\zhigangzong-1.2.0.jar'
     if (-not (Test-Path -LiteralPath $taskJar)) { throw 'Build the project first.' }
     if ($env:JAVA_HOME -and (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin\java.exe'))) {
         $taskJava = Join-Path $env:JAVA_HOME 'bin\java.exe'

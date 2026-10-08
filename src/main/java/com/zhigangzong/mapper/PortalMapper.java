@@ -60,7 +60,7 @@ public interface PortalMapper {
     int notifyRecruiters(@Param("school")long school,@Param("enterprise")long enterprise,@Param("id")long id,@Param("title")String title,@Param("content")String content);
     @Insert("INSERT INTO notification(recipient_id,title,content,business_type,business_id) SELECT u.id,'待办理实习审批','学生已提交实习申请，请在学校审批办理中查看。','PLACEMENT',#{id} FROM user_account u JOIN auth_account a ON a.user_id=u.id WHERE u.school_id=#{school} AND u.role='SCHOOL_ADMIN' AND a.enabled=TRUE")
     int notifySchool(@Param("school")long school,@Param("id")long id);
-    @Select("SELECT id,title,content,read_at AS readAt,created_at AS createdAt FROM notification WHERE recipient_id=#{user} ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
+    @Select("SELECT id,title,content,business_type AS businessType,business_id AS businessId,due_at AS dueAt,completed_at AS completedAt,read_at AS readAt,created_at AS createdAt FROM notification WHERE recipient_id=#{user} ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
     List<Map<String,Object>> notifications(@Param("user")long user,@Param("size")int size,@Param("offset")int offset);
     @Select("SELECT COUNT(*) FROM notification WHERE recipient_id=#{user}") long notificationCount(long user);
     @Update("UPDATE notification SET read_at=COALESCE(read_at,CURRENT_TIMESTAMP) WHERE id=#{id} AND recipient_id=#{user}") int read(@Param("id")long id,@Param("user")long user);

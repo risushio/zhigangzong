@@ -1,0 +1,9 @@
+import {request} from './api.js';
+import {escape as e,button,cardClass} from './ui.js';
+export async function renderBatchStatistics(container,user,openModal,helpers,id=null){
+ const {field,rows,cells,showForm}=helpers,batches=await request('/portal/rule-batches');if(!batches.length){container.innerHTML='<p>请先建立本校批次。</p>';return;}
+ const batchId=id||batches[0].id,d=await request('/portal/batch-statistics?batchId='+batchId),pct=value=>value==null?'无分母':e(value)+'%';
+ const metrics=[['学院学生基数',d.cohort],['落实学生',d.placed],['未落实',d.unplaced],['完成学生',d.completed],['落实率',pct(d.placementRate)],['完成率',pct(d.completionRate)],['专业匹配 / 已知',d.matched+' / '+d.professionalKnown],['专业匹配率',pct(d.professionalMatchRate)],['专业未知',d.professionalUnknown],['材料缺失学生',d.materialMissing],['材料规则未配置',d.materialUnconfigured]];
+ container.innerHTML=`<section class="${cardClass}"><div class="panel-head"><h2>批次统计 · ${e(d.batch.name)}</h2>${button('选择批次','data-stat-select')}</div><div class="panel-body"><dl class="detail-grid">${metrics.map(([label,value])=>'<div class="detail-field"><dt>'+e(label)+'</dt><dd>'+value+'</dd></div>').join('')}</dl><p>分母为本批次学院当前已开通且启用账号的学生档案，不是历史冻结名册。落实为本批次学校批准、未终止且未被替代的最新有效安排，每名学生只计一次；完成为该安排已批准结项归档。落实率与完成率均除以学院学生基数。</p><p>专业匹配仅统计平台岗位明确列出的专业，按完整词项比较；不限专业、自主联系或未填写要求属于未知，不进入专业匹配率分母。材料缺失按当前范围规则或批次预警规则的必需类型，以各类型最新文件审核通过为准；无配置单列，不当作材料齐全。</p>${rows(['学号 / 专业','落实 / 完成','专业匹配','缺失材料'],d.details,r=>cells([e(r.studentNo)+' / '+e(r.major),(r.placed?'已落实':'未落实')+' / '+(r.completed?'已完成':'未完成'),e(r.professionalMatch||'—'),e(r.materialRule==='UNCONFIGURED'?'规则未配置':r.missingKinds?.join('、')||'—')]))}</div></section>`;
+ container.querySelector('[data-stat-select]').onclick=()=>showForm(openModal,'选择统计批次',field('batchId','本校批次',{value:batchId,required:true,options:batches}),async f=>renderBatchStatistics(container,user,openModal,helpers,Number(f.get('batchId'))),'查看统计');
+}

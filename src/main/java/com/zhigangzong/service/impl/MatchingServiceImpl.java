@@ -14,12 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MatchingServiceImpl implements MatchingService {
+    private final com.zhigangzong.service.JobMatchingService matching;
     @Override
     public java.util.List<com.zhigangzong.vo.JobRecommendation> recommendations(long studentId) {
         if (studentId < 1) {
             throw BusinessException.badRequest("studentId 必须大于 0");
         }
-        throw BusinessException.notImplemented("规则推荐尚未实现；当前可使用岗位分页查询");
+        return matching.recommendations(studentId);
     }
 
     private final MatchFeedbackMapper matchFeedbackMapper;

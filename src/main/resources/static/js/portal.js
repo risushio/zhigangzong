@@ -1,3 +1,6 @@
+import {renderStudentSheet} from './student-sheet.js';
+import {renderBatchStatistics} from './batch-statistics.js';
+import {renderWorkflowPolicies} from './workflow-policies.js';
 import {showArchives} from './archives.js';
 import {showGradeReviews} from './grade-reviews.js';
 import {showEvaluations} from './evaluations.js';
@@ -11,9 +14,10 @@ import {showProcess} from './process.js';
 import {showAttendance} from './attendance.js';
 import {showExtensions} from './extensions.js';
 import {request} from './api.js';
+import {recommendationCards} from './matching.js';
 import {escape as e,statusBadge,loading,errorState,empty,toast,formatDate,button,cardClass} from './ui.js';
 
-const names={'portal-rules':'批次业务规则','portal-cases':'求助与预警','portal-files':'我的简历文件','portal-jobs':'寻找岗位','portal-profile':'我的档案','portal-applications':'投递与录用','portal-placements':'审批与过程跟踪','portal-notifications':'我的通知','portal-accounts':'开通业务账号'};
+const names={'portal-sheet':'Excel 导入导出','portal-statistics':'批次统计','portal-workflow':'范围执行规则','portal-favorites':'岗位收藏','portal-feedbacks':'推荐反馈','portal-rules':'批次业务规则','portal-cases':'求助与预警','portal-files':'我的简历文件','portal-jobs':'寻找岗位','portal-profile':'我的档案','portal-applications':'投递与录用','portal-placements':'审批与过程跟踪','portal-notifications':'我的通知','portal-accounts':'开通业务账号'};
 export const portalNames=names;
 let sequence=0;
 const inputClass='bg-[#0a0e1a] border border-white/10 rounded-lg text-[#e0e8ff] focus:border-blue-500/50';
@@ -37,13 +41,16 @@ function showForm(openModal,title,fields,submit,label='确认保存',intro=''){
 }
 async function all(resource){let list=[],p=1;for(;;){const data=await request('/catalog/'+resource+'?size=100&page='+p++);list.push(...data.items);if(list.length>=data.total)return list;}}
 
-export async function renderPortal(route,user,openModal,{page=1,q=''}={}){
+export async function renderPortal(route,user,openModal,{page=1,q='',filters={}}={}){
  const version=++sequence,container=document.querySelector('#page-content');
  if(!user){container.innerHTML=errorState({status:401,message:'请先登录'});return;}
  const kind=route.replace('portal-',''),student=user.role==='STUDENT',recruiter=user.role==='RECRUITER',admin=user.role==='SCHOOL_ADMIN';
- const refresh=()=>{if(container.isConnected)return renderPortal(route,user,openModal,{page,q});};
+ const refresh=()=>{if(container.isConnected)return renderPortal(route,user,openModal,{page,q,filters});};
  container.innerHTML=loading();
  try{
+  if(kind==='sheet')return await renderStudentSheet(container,user,openModal,{field,rows,cells,showForm});
+  if(kind==='statistics')return await renderBatchStatistics(container,user,openModal,{field,rows,cells,showForm});
+  if(kind==='workflow')return await renderWorkflowPolicies(container,user,openModal,{field,rows,cells,showForm});
   if(kind==='rules')return await renderRules(container,user,openModal,{field,rows,cells,showForm});
   if(kind==='cases')return await renderCases(container,user,openModal,refresh,{field,rows,cells,showForm},page);
   if(kind==='accounts'){
@@ -67,19 +74,29 @@ export async function renderPortal(route,user,openModal,{page=1,q=''}={}){
      await request('/portal/profile',{method:'PUT',body});await refresh();
     },'保存档案','修改范围仅限本人；简历引用会在每次投递时由你确认分享。');};return;
   }
-  const data=await request('/portal/'+kind+'?'+new URLSearchParams({page,size:10,q}));if(version!==sequence||!container.isConnected)return;
+  const data=await request('/portal/'+kind+'?'+new URLSearchParams({page,size:10,q,...(kind==='jobs'?filters:{})}));if(version!==sequence||!container.isConnected)return;
   let table;
-  if(kind==='jobs')table=rows(['岗位','企业 / 城市','要求','报酬','操作'],data.items,r=>cells([`<strong>${e(r.title)}</strong><p class="cell-sub">${e(r.description)}</p>`,e(r.enterpriseName)+' / '+e(r.city),e(r.requiredMajor||'—')+'<p class="cell-sub">'+e(r.requiredSkills||'—')+'</p>',e(r.monthlyPay??'待沟通'),student?action('投递岗位','apply',r.id):'—']));
+  if(kind==='jobs')table=rows(['岗位','企业 / 城市','要求','报酬','操作'],data.items,r=>cells([`<strong>${e(r.title)}</strong><p class="cell-sub">${e(r.description)}</p>`,e(r.enterpriseName)+' / '+e(r.city),e(r.requiredMajor||'—')+'<p class="cell-sub">'+e(r.requiredSkills||'—')+'</p>',e(r.monthlyPay??'待沟通'),student?action('投递岗位','apply',r.id)+' '+action('收藏岗位','favorite',r.id)+' '+action('推荐反馈','feedback',r.id):'—']));
+  if(kind==='favorites')table=rows(['岗位','企业 / 城市','开放状态','操作'],data.items,r=>cells([e(r.title),e(r.enterpriseName)+' / '+e(r.city),statusBadge(r.publishStatus)+' '+statusBadge(r.reviewStatus),action('取消收藏','unfavorite',r.id)+' '+action('投递岗位','apply',r.id)]));
+  if(kind==='feedbacks')table=rows(['岗位 / 学生','反馈','处理结果','操作'],data.items,r=>cells([e(r.title)+' / '+e(r.studentName),e(r.feedbackType)+'<p>'+e(r.reason)+'</p>',e(r.resolution||'待办理'),admin&&!r.completedAt?action('办理反馈','handle-feedback',r.id):r.completedAt?'已办理':'等待学校答复']));
   if(kind==='applications')table=rows(['岗位 / 企业','学生','招聘状态','操作'],data.items,r=>cells([e(r.title)+'<p class="cell-sub">'+e(r.enterpriseName)+'</p>',e(r.studentName),statusBadge(r.recruitmentStatus),action('详情与流程','application',r.id)]));
   if(kind==='placements')table=rows(['实习岗位 / 批次','学生','学校审批 / 到岗','操作'],data.items,r=>cells([e(r.positionTitle)+' '+statusBadge(r.source)+(r.replacementPlacementId?'<p class="cell-sub">历史记录 · 已有新安排 #'+e(r.replacementPlacementId)+'</p>':r.previousPlacementId?'<p class="cell-sub">新安排 · 原记录 #'+e(r.previousPlacementId)+'</p>':'')+'<p class="cell-sub">'+e(r.batchName)+'</p>',e(r.studentName),statusBadge(r.schoolApprovalStatus)+' '+statusBadge(r.arrivalStatus)+(r.terminationRequestId?' '+statusBadge('TERMINATED'):'')+(r.archiveStatus==='APPROVED'?' '+statusBadge('ARCHIVED'):''),action('详情与审批','placement',r.id)+' '+action('导师与周报','process',r.id)+' '+action('实习材料','files',r.id)+' '+action('考勤与请假','attendance',r.id)+' '+action('实习延期','extensions',r.id)+' '+action('换岗与换单位','transfers',r.id)+' '+action('实习终止','terminations',r.id)+' '+action('指导联系','contacts',r.id)+' '+action('三方评价','evaluations',r.id)+' '+action('成绩复核','grade-reviews',r.id)+' '+action('结项与归档','archive',r.id)]));
-  if(kind==='notifications')table=rows(['通知','内容','时间','操作'],data.items,r=>cells([e(r.title),e(r.content||'—'),e(formatDate(r.createdAt)),r.readAt?'已读':action('标记已读','read',r.id)]));
+  if(kind==='notifications')table=rows(['通知','内容 / 截止日期','时间','操作'],data.items,r=>cells([e(r.title),e(r.content||'—')+'<p>'+e(r.dueAt?'截止：'+formatDate(r.dueAt):'')+'</p>',e(formatDate(r.createdAt)),(r.readAt?'已读':action('标记已读','read',r.id))+' '+(r.completedAt?'已完成待办':action('完成待办','complete-notification',r.id))]));
   if(!table)throw new Error('页面不存在');
-  container.innerHTML=`<section class="${cardClass}"><div class="panel-head"><h2>${e(names[route])}</h2><small>${kind==='applications'?'录用与学校批准分开管理':'仅展示当前账号可访问的数据'}</small></div>${kind==='jobs'?'<form id="portal-search" class="toolbar"><div class="filters">'+field('q','岗位关键词',{value:q,max:100})+button('查询','type="submit"')+'</div></form>':''}${kind==='placements'&&student?'<div class="toolbar">'+action('自主实习申报','self-create','')+'</div>':''}${table}<div class="pagination"><span>共 ${data.total} 条</span>${button('上一页',`data-portal="prev" ${page===1?'disabled':''}`)}<span>${page} / ${Math.max(1,Math.ceil(data.total/10))}</span>${button('下一页',`data-portal="next" ${page*10>=data.total?'disabled':''}`)}</div></section>`;
-  container.querySelector('#portal-search')?.addEventListener('submit',event=>{event.preventDefault();event.stopPropagation();renderPortal(route,user,openModal,{q:new FormData(event.target).get('q'),page:1});});
+  container.innerHTML=`<section class="${cardClass}"><div class="panel-head"><h2>${e(names[route])}</h2><small>${kind==='applications'?'录用与学校批准分开管理':'仅展示当前账号可访问的数据'}</small></div>${kind==='jobs'?'<form id="portal-search" class="toolbar"><div class="filters">'+field('q','岗位关键词',{value:q,max:100})+field('major','专业',{value:filters.major||'',max:100})+field('skills','技能（逗号分隔，须全部具备）',{value:filters.skills||'',max:1000})+field('city','城市',{value:filters.city||'',max:100})+field('from','希望开始日期',{value:filters.from||'',type:'date'})+field('to','希望结束日期',{value:filters.to||'',type:'date'})+button('查询','type="submit"')+(student?button('按我的档案推荐','type="button" data-portal="recommend"'):'')+'</div></form>':''}${kind==='placements'&&student?'<div class="toolbar">'+action('自主实习申报','self-create','')+'</div>':''}${table}<div class="pagination"><span>共 ${data.total} 条</span>${button('上一页',`data-portal="prev" ${page===1?'disabled':''}`)}<span>${page} / ${Math.max(1,Math.ceil(data.total/10))}</span>${button('下一页',`data-portal="next" ${page*10>=data.total?'disabled':''}`)}</div></section>`;
+  container.querySelector('#portal-search')?.addEventListener('submit',event=>{event.preventDefault();event.stopPropagation();const values=Object.fromEntries(new FormData(event.target));const {q,...filters}=values;renderPortal(route,user,openModal,{q,filters,page:1});});
   container.onclick=async event=>{
    const target=event.target.closest('[data-portal]');if(!target||target.disabled)return;const id=Number(target.dataset.id),action=target.dataset.portal;
    try{
-    if(action==='prev'||action==='next')return renderPortal(route,user,openModal,{page:page+(action==='next'?1:-1),q});
+    if(action==='prev'||action==='next')return renderPortal(route,user,openModal,{page:page+(action==='next'?1:-1),q,filters});
+    if(action==='favorite'||action==='unfavorite'){await request('/portal/favorites/'+id,{method:action==='favorite'?'PUT':'DELETE'});toast(action==='favorite'?'已收藏':'已取消收藏');return refresh();}
+    if(action==='feedback')return showForm(openModal,'提交推荐反馈',field('feedbackType','反馈类型',{options:[{id:'NOT_INTERESTED',name:'不感兴趣'},{id:'NOT_SUITABLE',name:'推荐条件不合适'}]})+field('reason','具体原因',{required:true,type:'textarea',max:480}),async f=>{await request('/portal/feedbacks',{method:'POST',body:{jobId:id,feedbackType:f.get('feedbackType'),reason:f.get('reason').trim()}});},'提交反馈','学校管理员核查并答复；反馈不自动修改你的档案或岗位条件。');
+    if(action==='handle-feedback')return showForm(openModal,'办理推荐反馈',field('note','核查结果与答复',{required:true,type:'textarea',max:480}),async f=>{await request('/portal/feedbacks/'+id+'/handle',{method:'POST',body:{note:f.get('note').trim()}});await refresh();},'确认办理');
+    if(action==='recommend'){
+     const recommendations=await request('/portal/recommendations');
+     openModal('按我的档案推荐',recommendationCards(recommendations));return;
+    }
+    if(action==='complete-notification'){await request('/portal/notifications/'+id+'/complete',{method:'POST'});return refresh();}
     if(action==='read'){target.disabled=true;await request('/portal/notifications/'+id+'/read',{method:'POST'});return refresh();}
     if(action==='files')return await showFiles(id,user,openModal,refresh,{field,rows,cells,showForm});
     if(action==='self-create')return await selfForm(openModal,refresh,{field,showForm});

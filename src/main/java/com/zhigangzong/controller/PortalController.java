@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/portal") @RequiredArgsConstructor
 public class PortalController {
     private final PortalService service;
+    private final com.zhigangzong.service.JobMatchingService matching;
     @PostMapping("/accounts") public ApiResponse<?> account(@Valid @RequestBody Account r){return ApiResponse.ok(service.account(r));}
     @GetMapping("/profile") public ApiResponse<?> profile(){return ApiResponse.ok(service.profile());}
     @PutMapping("/profile") public ApiResponse<?> profile(@Valid @RequestBody Profile r){return ApiResponse.ok(service.profile(r));}
-    @GetMapping("/jobs") public ApiResponse<?> jobs(@RequestParam(defaultValue="")String q,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="10")int size){return ApiResponse.ok(service.jobs(q,page,size));}
+    @GetMapping("/jobs") public ApiResponse<?> jobs(@RequestParam(defaultValue="")String q,@RequestParam(defaultValue="")String major,@RequestParam(defaultValue="")String skills,@RequestParam(defaultValue="")String city,@RequestParam(required=false)java.time.LocalDate from,@RequestParam(required=false)java.time.LocalDate to,@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="10")int size){return ApiResponse.ok(matching.jobs(new com.zhigangzong.dto.JobFilter(q,major,skills,city,from,to),page,size));}
+    @GetMapping("/recommendations") public ApiResponse<?> recommendations(@RequestParam(required=false)Long studentId){return ApiResponse.ok(matching.recommendations(studentId));}
     @GetMapping("/applications") public ApiResponse<?> applications(@RequestParam(defaultValue="1")int page,@RequestParam(defaultValue="10")int size){return ApiResponse.ok(service.applications(page,size));}
     @PostMapping("/applications") public ApiResponse<?> apply(@Valid @RequestBody Apply r){return ApiResponse.ok(service.apply(r));}
     @GetMapping("/applications/{id}") public ApiResponse<?> application(@PathVariable long id){return ApiResponse.ok(service.application(id));}

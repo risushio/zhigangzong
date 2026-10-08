@@ -473,6 +473,12 @@ CREATE TABLE IF NOT EXISTS match_feedback (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 登录凭据与业务用户档案分离；不修改已有业务表。
+CREATE TABLE IF NOT EXISTS match_feedback_resolution (
+ feedback_id BIGINT PRIMARY KEY, actor_id BIGINT NOT NULL, note VARCHAR(480) NOT NULL,
+ completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(feedback_id) REFERENCES match_feedback(id), FOREIGN KEY(actor_id) REFERENCES user_account(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS auth_account (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE,
@@ -567,3 +573,8 @@ CREATE TABLE IF NOT EXISTS grade_review_event(id BIGINT AUTO_INCREMENT PRIMARY K
 
 CREATE TABLE IF NOT EXISTS placement_archive(id BIGINT AUTO_INCREMENT PRIMARY KEY,placement_id BIGINT NOT NULL UNIQUE,result_file_id BIGINT NOT NULL,summary TEXT NOT NULL,status VARCHAR(24) NOT NULL,snapshot LONGTEXT NOT NULL,reviewer_id BIGINT,review_comment TEXT,archived_at DATETIME,FOREIGN KEY(placement_id) REFERENCES internship_placement(id),FOREIGN KEY(result_file_id) REFERENCES stored_file(id),FOREIGN KEY(reviewer_id) REFERENCES user_account(id),CHECK(status IN ('PENDING','RETURNED','APPROVED'))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS placement_archive_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,archive_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,action VARCHAR(24) NOT NULL,summary TEXT NOT NULL,result_file_id BIGINT NOT NULL,comment TEXT,snapshot LONGTEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(archive_id) REFERENCES placement_archive(id),FOREIGN KEY(actor_id) REFERENCES user_account(id),FOREIGN KEY(result_file_id) REFERENCES stored_file(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS scoped_workflow_policy(id BIGINT AUTO_INCREMENT PRIMARY KEY,department_id BIGINT NOT NULL,batch_id BIGINT,batch_key BIGINT NOT NULL DEFAULT 0,major VARCHAR(100) NOT NULL DEFAULT '',version INT NOT NULL,settings TEXT NOT NULL,UNIQUE KEY uk_scope_rule(department_id,batch_key,major),FOREIGN KEY(department_id) REFERENCES department(id),FOREIGN KEY(batch_id) REFERENCES internship_batch(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS scoped_workflow_policy_event(id BIGINT AUTO_INCREMENT PRIMARY KEY,policy_id BIGINT NOT NULL,actor_id BIGINT NOT NULL,version INT NOT NULL,settings TEXT NOT NULL,created_at DATETIME DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(policy_id) REFERENCES scoped_workflow_policy(id),FOREIGN KEY(actor_id) REFERENCES user_account(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS deadline_reminder(reminder_key VARCHAR(160) PRIMARY KEY,school_id BIGINT NOT NULL,placement_id BIGINT NOT NULL,notification_id BIGINT NOT NULL UNIQUE,FOREIGN KEY(school_id) REFERENCES school(id),FOREIGN KEY(placement_id) REFERENCES internship_placement(id),FOREIGN KEY(notification_id) REFERENCES notification(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

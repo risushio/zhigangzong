@@ -1,3 +1,4 @@
+import {recommendationCards} from './matching.js';
 import {renderPortal,portalNames} from './portal.js';
 import {api,request} from './api.js';
 import {resources,forms,groups,tabGroups,labels,formBody} from './config.js';
@@ -19,8 +20,8 @@ const orbit=`<svg class="orbit-visual" viewBox="0 0 400 180" aria-hidden="true">
 <text x="41" y="123" class="orbit-text">STUDENT</text><text x="277" y="41" class="orbit-text">OPPORTUNITY</text><text x="268" y="167" class="orbit-text">GROWTH</text></svg>`;
 function shell(){
  const role=user?.role;
- const portalItems=role==='STUDENT'?[['portal-jobs','寻找岗位','briefcase'],['portal-profile','我的档案','users'],['portal-cases','求助与预警','shield'],['portal-files','我的简历文件','book'],['portal-applications','我的申请','clipboard'],['portal-placements','审批与过程跟踪','shield'],['portal-notifications','我的通知','bell']]:['TEACHER','ENTERPRISE_MENTOR'].includes(role)?[['portal-placements','指导学生与周报','book'],...(role==='TEACHER'?[['portal-cases','求助与预警','shield']]:[]),['portal-notifications','我的通知','bell']]:[['portal-applications','候选人管理','clipboard'],['portal-notifications','我的通知','bell']];
- const navGroups=role&&role!=='SCHOOL_ADMIN'?[{label:'我的工作空间',items:portalItems}]:[...groups,{label:'业务办理',items:[['portal-applications','招聘流程','clipboard'],['portal-placements','审批与导师分配','shield'],['portal-rules','批次业务规则','settings'],['portal-accounts','账号开通','users'],['portal-cases','求助与预警','shield']]}];
+ const portalItems=role==='STUDENT'?[['portal-jobs','寻找岗位','briefcase'],['portal-favorites','岗位收藏','briefcase'],['portal-feedbacks','推荐反馈','clipboard'],['portal-profile','我的档案','users'],['portal-cases','求助与预警','shield'],['portal-files','我的简历文件','book'],['portal-applications','我的申请','clipboard'],['portal-placements','审批与过程跟踪','shield'],['portal-notifications','我的通知','bell']]:['TEACHER','ENTERPRISE_MENTOR'].includes(role)?[['portal-placements','指导学生与周报','book'],...(role==='TEACHER'?[['portal-cases','求助与预警','shield']]:[]),['portal-notifications','我的通知','bell']]:[['portal-applications','候选人管理','clipboard'],['portal-notifications','我的通知','bell']];
+ const navGroups=role&&role!=='SCHOOL_ADMIN'?[{label:'我的工作空间',items:portalItems}]:[...groups,{label:'业务办理',items:[['portal-feedbacks','推荐反馈办理','clipboard'],['portal-applications','招聘流程','clipboard'],['portal-placements','审批与导师分配','shield'],['portal-rules','批次业务规则','settings'],['portal-workflow','范围执行规则','settings'],['portal-statistics','批次统计','chart'],['portal-sheet','Excel 导入导出','book'],['portal-accounts','账号开通','users'],['portal-cases','求助与预警','shield']]}];
  const workspaceLabel=role==='STUDENT'?'学生端':role==='RECRUITER'?'企业招聘端':role==='TEACHER'?'教师端':role==='ENTERPRISE_MENTOR'?'企业导师端':'学校管理端';
  const parent=tabGroups.find(g=>g.includes(route))?.[0]||route;
  app.innerHTML=`<aside class="sidebar" aria-label="主导航"><a href="#/dashboard" class="brand">${brand}</a><div class="workspace"><span class="workspace-icon">${icon('building')}</span><div><strong>高校实习工作空间</strong><small>${workspaceLabel} · 本地工作空间</small></div></div><nav class="navigation">${navGroups.map(g=>'<div class="nav-label">'+g.label+'</div>'+g.items.map(([r,n,i])=>'<a class="nav-link '+(r===parent?'active':'')+'" href="#/'+r+'" '+(r===parent?'aria-current="page"':'')+'>'+icon(i)+'<span>'+n+'</span></a>').join('')).join('')}</nav><div class="sidebar-bottom">${icon('shield')} ${workspaceLabel} · 全过程跟踪</div></aside>
@@ -97,7 +98,7 @@ async function allOptions(resource){
  optionsCache.set(resource,items);return items;
 }
 async function matching(version){
- document.querySelector('#page-content').innerHTML='<section class="'+cardClass+'"><div class="panel-head"><h2>'+icon('spark')+'寻找适合的实习机会</h2><span class="badge violet">规则推荐待完善</span></div><div class="panel-body"><p class="muted">推荐以专业、技能、时间及地点为依据，提供适配说明，不代表录用概率。</p><form id="matching-form" class="filters" style="margin-top:22px"><select class="bg-[#0a0e1a] border border-white/10 rounded-lg text-[#e0e8ff] focus:border-blue-500/50" name="studentId" aria-label="选择学生" required><option value="">正在读取学生档案…</option></select>'+button('获取推荐','type="submit"','primary')+'<a class="btn secondary" href="#/jobs">浏览岗位库</a></form><div id="matching-result">'+empty('从学生档案开始','选择学生后查询推荐结果；尚未实现的能力会明确提示。')+'</div></div></section>';
+ document.querySelector('#page-content').innerHTML='<section class="'+cardClass+'"><div class="panel-head"><h2>'+icon('spark')+'寻找适合的实习机会</h2><span class="badge violet">可解释规则推荐</span></div><div class="panel-body"><p class="muted">推荐以专业、技能、时间及地点为依据，提供适配说明，不代表录用概率。</p><form id="matching-form" class="filters" style="margin-top:22px"><select class="bg-[#0a0e1a] border border-white/10 rounded-lg text-[#e0e8ff] focus:border-blue-500/50" name="studentId" aria-label="选择学生" required><option value="">正在读取学生档案…</option></select>'+button('获取推荐','type="submit"','primary')+'<a class="btn secondary" href="#/jobs">浏览岗位库</a></form><div id="matching-result">'+empty('从学生档案开始','选择学生后查看适配分、理由、技能缺口与冲突。最多返回排序后的 100 个开放岗位。')+'</div></div></section>';
  try{const students=await allOptions('students');if(version!==generation)return;document.querySelector('#matching-form select').innerHTML='<option value="">请选择学生</option>'+students.map(s=>'<option value="'+e(s.id)+'">'+e(s.studentName||s.studentNo)+' · '+e(s.major)+'</option>').join('');}catch(err){if(version===generation)document.querySelector('#matching-result').innerHTML=errorState(err);}
 }
 function showLogin(){
@@ -167,8 +168,8 @@ async function submit(event){
    await api.review(form.dataset.resource,form.dataset.id,{decision:data.get('decision'),note:data.get('note').trim()});modal.close();toast('审核结果已保存');await render();
   }else if(form.id==='matching-form'){
    document.querySelector('#matching-result').innerHTML=loading();
-   try{const result=await request('/recommendations?'+new URLSearchParams({studentId:data.get('studentId')}));document.querySelector('#matching-result').innerHTML=result.length?'<div class="modules-list">'+result.map(x=>'<article class="module-block"><h3>岗位 #'+e(x.jobId)+'</h3><p>'+e(x.matchedReasons?.join('；'))+'</p><p>'+e(x.conflicts?.join('；'))+'</p></article>').join('')+'</div>':empty('暂无匹配结果','请完善学生档案或查看岗位库。');}
-   catch(err){document.querySelector('#matching-result').innerHTML=err.status===501?empty('推荐能力正在完善','当前版本可以浏览和筛选真实岗位，自动推荐尚未开放。'):errorState(err);}
+   try{const result=await request('/recommendations?'+new URLSearchParams({studentId:data.get('studentId')}));document.querySelector('#matching-result').innerHTML=recommendationCards(result);}
+   catch(err){document.querySelector('#matching-result').innerHTML=errorState(err);}
   }
  }catch(err){if(box)box.innerHTML='<p class="inline-error" role="alert">'+e(err.message)+'</p>';else toast(err.message);}
  finally{if(submitButton?.isConnected){submitButton.disabled=false;submitButton.innerHTML=original;}}

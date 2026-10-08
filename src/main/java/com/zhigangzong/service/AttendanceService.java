@@ -17,21 +17,23 @@ public class AttendanceService {
     private final PortalMapper accounts;
     private final StudentProfileMapper students;
     private final ManagementMapper audit;
+    private final WorkflowPolicyResolver policies;
+    private boolean enabled(InternshipPlacement p){var override=mapper.enabled(p.getId());if(override!=null)return override;var e=policies.resolve(p);return e!=null && e.policy().attendanceEnabled();}
 
     public Map<String,Object> list(long id) {
         var a=portal.actor("STUDENT","TEACHER","ENTERPRISE_MENTOR","SCHOOL_ADMIN");
         var p=portal.accessiblePlacement(id,a);
-        return Map.of("placement",p,"enabled",Boolean.TRUE.equals(mapper.enabled(id)),"records",mapper.records(id),"policyEvents",mapper.policyEvents(id));
+        return Map.of("placement",p,"enabled",enabled(p),"records",mapper.records(id),"policyEvents",mapper.policyEvents(id));
     }
     public Map<String,Object> policy(long id,Policy r) {
-        var a=portal.actor("SCHOOL_ADMIN");portal.requireCurrent(portal.accessiblePlacement(id,a));
-        if(Boolean.TRUE.equals(mapper.enabled(id))==r.enabled())throw BusinessException.badRequest("考勤要求未变化");
+        var a=portal.actor("SCHOOL_ADMIN");var p=portal.accessiblePlacement(id,a);portal.requireCurrent(p);
+        if(enabled(p)==r.enabled())throw BusinessException.badRequest("考勤要求未变化");
         mapper.policy(id,r.enabled());mapper.policyEvent(id,a.id(),r.enabled(),r.note());
         audit.audit(a.id(),"ATTENDANCE_POLICY","internship_placement",id,r.note());return list(id);
     }
     private void active(InternshipPlacement p) {
         portal.requireCurrent(p);
-        if(!Boolean.TRUE.equals(mapper.enabled(p.getId())))throw BusinessException.badRequest("本实习未启用考勤要求");
+        if(!enabled(p))throw BusinessException.badRequest("本实习未启用考勤要求");
         if(!"APPROVED".equals(p.getSchoolApprovalStatus()) || !"ARRIVED".equals(p.getArrivalStatus()) || p.getTeacherId()==null)
             throw BusinessException.badRequest("需学校批准、确认到岗并分配教师后办理考勤");
     }

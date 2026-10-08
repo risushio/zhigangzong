@@ -24,6 +24,7 @@ public class PortalService {
     private final PasswordEncoder passwords;
     private final SelfPlacementMapper selfPlacements;
     private final FileMapper files;
+    private final WorkflowPolicyResolver policies;
 
     PortalMapper.Actor actor(String... roles) {
         var authentication=SecurityContextHolder.getContext().getAuthentication();
@@ -166,6 +167,7 @@ public class PortalService {
         var a=actor("SCHOOL_ADMIN");var p=accessiblePlacement(id,a);requireCurrent(p);
         if(!p.getSchoolApprovalStatus().equals("PENDING"))throw BusinessException.badRequest("仅待审批申请可以处理");
         if("SELF".equals(p.getSource()) && "APPROVED".equals(r.decision())){var e=management.lockEnterprise(p.getEnterpriseId());if(e==null || List.of("SUSPENDED","REJECTED").contains(e.getReviewStatus()))throw BusinessException.badRequest("单位已暂停或未通过审核，不能批准实习");}
+        if("APPROVED".equals(r.decision()))policies.approval(p);
         mapper.approval(id,r.decision());mapper.approvalRecord(id,a.id(),r.decision(),r.comment());
         audit(a,"APPROVAL","internship_placement",id,r.decision()+": "+r.comment());
         mapper.notifyUser(students.findById(p.getStudentId()).getUserId(),"学校审批结果",r.decision()+"："+r.comment(),"PLACEMENT",id);

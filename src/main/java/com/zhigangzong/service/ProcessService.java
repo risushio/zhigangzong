@@ -17,6 +17,7 @@ public class ProcessService {
     private final ProcessMapper mapper;
     private final ManagementMapper audit;
     private final StudentProfileMapper students;
+    private final WorkflowPolicyResolver policies;
 
     public List<Map<String,Object>> mentors(long id) {
         var a=portal.actor("SCHOOL_ADMIN");var p=portal.accessiblePlacement(id,a);
@@ -58,6 +59,7 @@ public class ProcessService {
     }
     private void fill(ProgressReport report,Report r,InternshipPlacement p) {
         if(r.periodEnd().isBefore(r.periodStart()) || r.periodStart().isBefore(p.getStartDate()) || r.periodEnd().isAfter(p.getEndDate()))throw BusinessException.badRequest("周报日期必须有序且在实习期间内");
+        policies.report(p,r.periodStart(),r.periodEnd());
         report.setTitle(r.title());report.setPeriodStart(r.periodStart());report.setPeriodEnd(r.periodEnd());report.setContent(r.content());
     }
     public ProgressReport create(long id,Report r) {
@@ -81,6 +83,7 @@ public class ProcessService {
     public ProgressReport submit(long id) {
         var a=portal.actor("STUDENT");var r=accessible(id,a);var p=portal.accessiblePlacement(r.getPlacementId(),a);active(p);
         if(!List.of("DRAFT","RETURNED").contains(r.getStatus()) || p.getTeacherId()==null)throw BusinessException.badRequest("当前周报不能提交或缺少指导教师");
+        policies.report(p,r.getPeriodStart(),r.getPeriodEnd());
         r.setStatus("SUBMITTED");r.setReviewerId(null);r.setFeedback(null);mapper.save(r);mapper.reportEvent(r,a.id(),"SUBMITTED");
         audit.audit(a.id(),"SUBMIT","progress_report",id,"学生提交周报");accounts.notifyUser(p.getTeacherId(),"周报待批阅",r.getTitle(),"REPORT",id);return r;
     }
