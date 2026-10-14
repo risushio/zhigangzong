@@ -1,8 +1,12 @@
+param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$MavenArguments = @()
+)
 $ErrorActionPreference = 'Stop'
 $taskPrevious = $env:RUN_MYSQL_TESTS
 try {
     $env:RUN_MYSQL_TESTS = 'true'
-    & (Join-Path $PSScriptRoot 'maven.ps1') verify
+    & (Join-Path $PSScriptRoot 'maven.ps1') verify @MavenArguments
     $taskExitCode = $LASTEXITCODE
 } finally {
     $env:RUN_MYSQL_TESTS = $taskPrevious

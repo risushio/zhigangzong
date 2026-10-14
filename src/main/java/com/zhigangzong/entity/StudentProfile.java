@@ -9,8 +9,14 @@ import java.time.LocalDateTime;
 public class StudentProfile {
     private Long id;
     private Long userId;
+    private Long schoolId;
+    private String name;
+    private Long departmentId;
+    private String phone;
     private String studentNo;
     private String major;
+    private Integer gradeYear;
+    private String className;
     private String skills;
     private String projectExperience;
     private String resumeRef;

@@ -36,9 +36,15 @@ CREATE TABLE IF NOT EXISTS user_account (
 
 CREATE TABLE IF NOT EXISTS student_profile (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id BIGINT,
+    school_id BIGINT NOT NULL,
+    name VARCHAR(80) NOT NULL,
+    department_id BIGINT,
+    phone VARCHAR(20),
     student_no VARCHAR(40) NOT NULL,
     major VARCHAR(100) NOT NULL,
+    grade_year INT,
+    class_name VARCHAR(100),
     skills VARCHAR(1000),
     project_experience TEXT,
     resume_ref VARCHAR(500),
@@ -48,6 +54,9 @@ CREATE TABLE IF NOT EXISTS student_profile (
     days_per_week INT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_student_user (user_id),
+    UNIQUE KEY uk_student_school_no (school_id, student_no),
+    FOREIGN KEY (school_id) REFERENCES school(id),
+    FOREIGN KEY (department_id, school_id) REFERENCES department(id, school_id),
     FOREIGN KEY (user_id) REFERENCES user_account(id),
     CHECK (days_per_week BETWEEN 1 AND 7),
     CHECK (available_to >= available_from)

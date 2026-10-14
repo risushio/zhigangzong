@@ -33,8 +33,8 @@ abstract class PortalTestFixture {
   school=insert("INSERT INTO school(name,code) VALUES('Portal Test',?)","IT-"+UUID.randomUUID().toString().substring(0,20));
   department=insert("INSERT INTO department(school_id,name,code) VALUES(?,'Engineering','ENG')",school);
   student=account(school,department,"STUDENT"); other=account(school,department,"STUDENT");admin=account(school,null,"SCHOOL_ADMIN");recruiter=account(school,null,"RECRUITER");otherRecruiter=account(school,null,"RECRUITER");
-  studentId=insert("INSERT INTO student_profile(user_id,student_no,major) VALUES(?,'001','CS')",userId(student));
-  db.update("INSERT INTO student_profile(user_id,student_no,major) VALUES(?,'002','CS')",userId(other));
+  studentId=insert("INSERT INTO student_profile(user_id,school_id,name,student_no,major) SELECT id,school_id,display_name,'001','CS' FROM user_account WHERE id=?",userId(student));
+  db.update("INSERT INTO student_profile(user_id,school_id,name,student_no,major) SELECT id,school_id,display_name,'002','CS' FROM user_account WHERE id=?",userId(other));
   enterprise=insert("INSERT INTO enterprise(name,credit_code,review_status) VALUES('IT Enterprise',?,'APPROVED')","IT-"+UUID.randomUUID().toString().substring(0,20));
   db.update("INSERT INTO enterprise_member(user_id,enterprise_id) VALUES(?,?)",userId(recruiter),enterprise);
   long second=insert("INSERT INTO enterprise(name,credit_code) VALUES('Other',?)","IT-"+UUID.randomUUID().toString().substring(0,20));

@@ -1,0 +1,20 @@
+app:
+  agent:
+    request-timeout-seconds: 120
+  llm:
+    enabled: ${LLM_ENABLED:false}
+    provider: openai-compatible
+    endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com/chat/completions}
+    model: ${DEEPSEEK_MODEL:deepseek-flash}
+    api-key: ${DEEPSEEK_API_KEY:}
+    connect-timeout: 10s
+    read-timeout: 120s
+    total-timeout: 150s
+    supports-json-mode: true
+    supports-tool-calling: true
+    supports-strict-tools: false
+    supports-parallel-tool-calls: false
+    token-parameter: max-tokens
+    max-tokens: 2000
+    reasoning-effort: none
+    max-retries: 1

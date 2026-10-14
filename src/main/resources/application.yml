@@ -46,3 +46,12 @@ mybatis:
 logging:
   level:
     com.zhigangzong: INFO
+
+app:
+  agent:
+    enabled: ${AGENT_ENABLED:false}
+    model-enabled: ${AGENT_MODEL_ENABLED:false}
+    processing-mode: ${AGENT_PROCESSING_MODE:extraction}
+    endpoint: ${AGENT_MODEL_ENDPOINT:https://api.openai.com/v1/chat/completions}
+    model: ${AGENT_MODEL:}
+    api-key: ${AGENT_MODEL_API_KEY:}

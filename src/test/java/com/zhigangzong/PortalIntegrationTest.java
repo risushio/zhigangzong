@@ -71,7 +71,7 @@ class PortalIntegrationTest extends PortalTestFixture {
  }
  @Test void accountProvisionRequiresLocalAdminAndDoesNotOverwrite()throws Exception{
   long id=insert("INSERT INTO user_account(school_id,department_id,display_name,role) VALUES(?,?,'New Student','STUDENT')",school,department);
-  db.update("INSERT INTO student_profile(user_id,student_no,major) VALUES(?,'new','CS')",id);
+  db.update("INSERT INTO student_profile(user_id,school_id,name,student_no,major) SELECT id,school_id,display_name,'new','CS' FROM user_account WHERE id=?",id);
   var body=Map.of("userId",id,"username","new-"+UUID.randomUUID().toString().substring(0,20),"password","integration-password");
   send(post("/api/portal/accounts"),student,body,403);
   send(post("/api/portal/accounts"),foreignAdmin,body,404);

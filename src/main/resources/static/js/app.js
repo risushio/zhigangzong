@@ -4,11 +4,12 @@ import {api,request} from './api.js';
 import {resources,forms,groups,tabGroups,labels,formBody} from './config.js';
 import {escape as e,icon,button,cardClass,statusBadge,loading,errorState,empty,toast,formatDate} from './ui.js';
 import {startParticles} from './particles.js';
+import {renderAgent} from './agent.js';
 const app=document.querySelector('#app'),modal=document.querySelector('#modal');
 let user=null,route='dashboard',page=1,query='',filterStatus='',city='',generation=0,currentData=null,priorFocus=null;
 let modalGeneration=0;
 const optionsCache=new Map();
-const titleFor=r=>portalNames[r]||resources[r]?.name||({dashboard:'工作台',statistics:'统计概览',matching:'智能匹配',modules:'功能进度'}[r]||'页面不存在');
+const titleFor=r=>portalNames[r]||resources[r]?.name||({dashboard:'工作台',statistics:'统计概览',matching:'智能匹配',modules:'功能进度','student-agent':'AI 学生档案助手'}[r]||'页面不存在');
 const brand='<img class="brand-mark" src="/favicon.svg" alt=""><div><span class="brand-name">智岗踪</span><span class="brand-sub">ZHIGANGZONG</span></div>';
 const orbit=`<svg class="orbit-visual" viewBox="0 0 400 180" aria-hidden="true">
 <defs><radialGradient id="orb"><stop stop-color="#2870c4" stop-opacity=".18"/><stop offset="1" stop-color="#2870c4" stop-opacity="0"/></radialGradient></defs>
@@ -22,6 +23,7 @@ function shell(){
  const role=user?.role;
  const portalItems=role==='STUDENT'?[['portal-jobs','寻找岗位','briefcase'],['portal-favorites','岗位收藏','briefcase'],['portal-feedbacks','推荐反馈','clipboard'],['portal-profile','我的档案','users'],['portal-cases','求助与预警','shield'],['portal-files','我的简历文件','book'],['portal-applications','我的申请','clipboard'],['portal-placements','审批与过程跟踪','shield'],['portal-notifications','我的通知','bell']]:['TEACHER','ENTERPRISE_MENTOR'].includes(role)?[['portal-placements','指导学生与周报','book'],...(role==='TEACHER'?[['portal-cases','求助与预警','shield']]:[]),['portal-notifications','我的通知','bell']]:[['portal-applications','候选人管理','clipboard'],['portal-notifications','我的通知','bell']];
  const navGroups=role&&role!=='SCHOOL_ADMIN'?[{label:'我的工作空间',items:portalItems}]:[...groups,{label:'业务办理',items:[['portal-feedbacks','推荐反馈办理','clipboard'],['portal-applications','招聘流程','clipboard'],['portal-placements','审批与导师分配','shield'],['portal-rules','批次业务规则','settings'],['portal-workflow','范围执行规则','settings'],['portal-statistics','批次统计','chart'],['portal-sheet','Excel 导入导出','book'],['portal-accounts','账号开通','users'],['portal-cases','求助与预警','shield']]}];
+ if(role==='SCHOOL_ADMIN')navGroups.push({label:'学生建档',items:[['student-agent','AI 学生档案助手','users']]});
  const workspaceLabel=role==='STUDENT'?'学生端':role==='RECRUITER'?'企业招聘端':role==='TEACHER'?'教师端':role==='ENTERPRISE_MENTOR'?'企业导师端':'学校管理端';
  const parent=tabGroups.find(g=>g.includes(route))?.[0]||route;
  app.innerHTML=`<aside class="sidebar" aria-label="主导航"><a href="#/dashboard" class="brand">${brand}</a><div class="workspace"><span class="workspace-icon">${icon('building')}</span><div><strong>高校实习工作空间</strong><small>${workspaceLabel} · 本地工作空间</small></div></div><nav class="navigation">${navGroups.map(g=>'<div class="nav-label">'+g.label+'</div>'+g.items.map(([r,n,i])=>'<a class="nav-link '+(r===parent?'active':'')+'" href="#/'+r+'" '+(r===parent?'aria-current="page"':'')+'>'+icon(i)+'<span>'+n+'</span></a>').join('')).join('')}</nav><div class="sidebar-bottom">${icon('shield')} ${workspaceLabel} · 全过程跟踪</div></aside>
@@ -109,6 +111,7 @@ async function render(){
  if(route==='login'){showLogin();return;}
  if(user&&user.role!=='SCHOOL_ADMIN'&&!route.startsWith('portal-')){location.hash=user.role==='STUDENT'?'#/portal-jobs':['TEACHER','ENTERPRISE_MENTOR'].includes(user.role)?'#/portal-placements':'#/portal-applications';return;}
  shell();
+ if(route==='student-agent')return renderAgent(document.querySelector('#page-content'),user);
  if(route.startsWith('portal-'))return renderPortal(route,user,openModal);
  if(resources[route])return resourcePage(version);
  if(route==='dashboard')return dashboard(version);

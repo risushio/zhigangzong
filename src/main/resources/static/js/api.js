@@ -2,13 +2,13 @@ export class ApiError extends Error {
   constructor(message,status=0,code='NETWORK_ERROR'){super(message);this.status=status;this.code=code;}
 }
 let csrf=null;
-export async function request(path,{method='GET',body,form=false,multipart=false,signal}={}){
+export async function request(path,{method='GET',body,form=false,multipart=false,signal,headers:extraHeaders={},timeoutMs=15000}={}){
   const controller=new AbortController();
   const relay=()=>controller.abort();signal?.addEventListener('abort',relay,{once:true});
   if(signal?.aborted) controller.abort();
-  const timeout=setTimeout(()=>controller.abort(),15000);
+  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
   try{
-    const headers={Accept:'application/json'};
+    const headers={Accept:'application/json',...extraHeaders};
     if(method!=='GET'){
       if(!csrf) csrf=await request('/auth/csrf');
       headers[csrf.headerName]=csrf.token;

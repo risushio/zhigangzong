@@ -1,0 +1,19 @@
+app:
+  agent:
+    request-timeout-seconds: 120
+  llm:
+    enabled: ${LLM_ENABLED:false}
+    provider: openai-compatible
+    endpoint: ${OLLAMA_ENDPOINT:http://127.0.0.1:11434/v1/chat/completions}
+    model: ${OLLAMA_MODEL:qwen2.5:3b}
+    api-key: ollama
+    connect-timeout: 5s
+    read-timeout: 120s
+    total-timeout: 150s
+    supports-json-mode: true
+    supports-tool-calling: false
+    supports-strict-tools: false
+    supports-parallel-tool-calls: false
+    token-parameter: max-tokens
+    max-tokens: 2000
+    max-retries: 1

@@ -36,7 +36,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-            ConstraintViolationException.class, MissingServletRequestParameterException.class})
+            ConstraintViolationException.class, MissingServletRequestParameterException.class,
+            org.springframework.web.bind.ServletRequestBindingException.class})
     public ResponseEntity<ApiResponse<Void>> invalidRequest(Exception ex) {
         return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_ARGUMENT", "请求格式或参数类型错误"));
     }

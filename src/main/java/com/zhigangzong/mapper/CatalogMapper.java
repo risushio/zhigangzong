@@ -4,7 +4,7 @@ import java.util.*;
 public interface CatalogMapper {
     @SelectProvider(type=CatalogSql.class, method="page")
     List<Map<String,Object>> page(@Param("resource") String resource, @Param("q") String q,
-            @Param("status") String status, @Param("city") String city, @Param("offset") int offset, @Param("size") int size);
+            @Param("status") String status, @Param("city") String city, @Param("offset") int offset, @Param("size") int size,@Param("username") String username);
     @SelectProvider(type=CatalogSql.class, method="count")
-    long count(@Param("resource") String resource, @Param("q") String q, @Param("status") String status, @Param("city") String city);
+    long count(@Param("resource") String resource, @Param("q") String q, @Param("status") String status, @Param("city") String city,@Param("username") String username);
 }

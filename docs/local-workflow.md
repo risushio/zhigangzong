@@ -4,6 +4,10 @@
 
 # 本地运行与联调说明
 
+> Agent V1 最新未发布变化采用数据库优先方式，第一阶段的无模型草稿与确认已在隔离库验收，见 [第一阶段说明](agent-phase1-workflow.md)。本机业务库尚未执行 Agent/年级/班级升级，新构建启用到该库前须单独确认迁移；不要直接用业务库运行新建档验收。
+
+> 第二阶段的独立模型接口、Profile 切换、Ollama 本地真实调用与 DeepSeek HTTP Mock 已验证；配置、模型下载、启动和复验命令见 [第二阶段说明](agent-phase2-workflow.md)。真实 DeepSeek 待配置提供后另验，第三阶段聊天提取集成须先取得用户确认。
+
 更新日期：2026-10-08。当前支持学校管理员、学生、招聘、教师与企业导师，保留粒子系统主题。
 
 ## 打开项目
@@ -64,7 +68,7 @@ npm test
 - POST `/api/enterprises/{id}/review`、`/api/jobs/{id}/review`、`/api/jobs/{id}/publication`。
 - 原 27 张表加 placement_process_event、progress_report_event 两张历史表（共 34 张表（含本轮 5 张自主申报/文件表））。未删除表或已有数据。
 
-投递录用、学校审批和本人通知已补充。考勤与请假闭环已完成，支持按实习启用要求、学生签到/请假/补签及当前教师审批，见 [考勤验收](attendance-workflow.md)。实习延期支持学生申请、学校审批及原日期历史，见 [延期验收](extension-workflow.md)。换岗与换单位支持关联新记录、原资料历史及拒绝后重新安排，见 [变更验收](transfer-workflow.md)。实习终止支持申请审批、历史只读与关联新记录恢复，见 [终止验收](termination-workflow.md)。学生求助、规则预警、三方评价、成绩复核与结项 ZIP 导出已完成，见 [第二优先级验收](second-priority-workflow.md)。第三优先级岗位组合筛选/可解释推荐、收藏反馈、范围执行规则、截止提醒与待办、批次统计及学生 Excel 导入导出已完成，见 [第三优先级验收](third-priority-workflow.md)。学院管理员、账号完善与历史 API 全面学校隔离仍待开发。
+投递录用、学校审批和本人通知已补充。考勤与请假闭环已完成，支持按实习启用要求、学生签到/请假/补签及当前教师审批，见 [考勤验收](attendance-workflow.md)。实习延期支持学生申请、学校审批及原日期历史，见 [延期验收](extension-workflow.md)。换岗与换单位支持关联新记录、原资料历史及拒绝后重新安排，见 [变更验收](transfer-workflow.md)。实习终止支持申请审批、历史只读与关联新记录恢复，见 [终止验收](termination-workflow.md)。学生求助、规则预警、三方评价、成绩复核与结项 ZIP 导出已完成，见 [第二优先级验收](second-priority-workflow.md)。第三优先级岗位组合筛选/可解释推荐、收藏反馈、范围执行规则、截止提醒与待办、批次统计及学生 Excel 导入导出已完成，见 [第三优先级验收](third-priority-workflow.md)。当前未提供学院管理员角色和完整账号维护，历史 API 尚未全面实现学校隔离，适用范围为单校本地试点。
 
 ## IntelliJ IDEA 的本机 Maven 配置
 

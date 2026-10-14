@@ -14,7 +14,8 @@ class StudentServiceTest {
     private final StudentProfileMapper students = mock(StudentProfileMapper.class);
     private final AuditLogMapper audit = mock(AuditLogMapper.class);
     private final UserAccountMapper users = mock(UserAccountMapper.class);
-    private final StudentService service = new StudentServiceImpl(students, audit, users);
+    private final jakarta.validation.Validator validator = mock(jakarta.validation.Validator.class);
+    private final StudentService service = new StudentServiceImpl(students, audit, users, validator);
 
     @Test
     void rejectsNonStudentWithoutWritingData() {

@@ -16,6 +16,7 @@ public class CatalogServiceImpl implements CatalogService {
         CatalogSql.validate(resource);
         if(q.length()>100 || status.length()>32 || city.length()>100) throw BusinessException.badRequest("查询条件过长");
         PageQuery query=new PageQuery(page,size);
-        return new PageResult<>(mapper.page(resource,q,status,city,query.offset(),size),mapper.count(resource,q,status,city),page,size);
+        String username=StudentProfileMapper.username();
+        return new PageResult<>(mapper.page(resource,q,status,city,query.offset(),size,username),mapper.count(resource,q,status,city,username),page,size);
     }
 }
