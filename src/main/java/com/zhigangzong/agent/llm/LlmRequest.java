@@ -1,12 +1,13 @@
 package com.zhigangzong.agent.llm;
 
 import lombok.Builder;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Duration;
 import java.util.List;
 
 @Builder(toBuilder=true)
 public record LlmRequest(List<LlmMessage> messages,String model,Double temperature,ResponseFormat responseFormat,
-                         List<LlmToolDefinition> tools,ToolChoice toolChoice,Duration timeout) {
+                         List<LlmToolDefinition> tools,ToolChoice toolChoice,Duration timeout,JsonNode jsonSchemaHint) {
     public enum ResponseFormat { TEXT, JSON_OBJECT }
     public record ToolChoice(Mode mode,String name) {
         public enum Mode { AUTO, NONE, REQUIRED, NAMED }
@@ -17,6 +18,12 @@ public record LlmRequest(List<LlmMessage> messages,String model,Double temperatu
         messages=messages==null?List.of():List.copyOf(messages);
         tools=tools==null?List.of():List.copyOf(tools);
         responseFormat=responseFormat==null?ResponseFormat.TEXT:responseFormat;
+        jsonSchemaHint=jsonSchemaHint==null?null:jsonSchemaHint.deepCopy();
+    }
+    @Override public JsonNode jsonSchemaHint(){return jsonSchemaHint==null?null:jsonSchemaHint.deepCopy();}
+    public LlmRequest(List<LlmMessage> messages,String model,Double temperature,ResponseFormat responseFormat,
+                      List<LlmToolDefinition> tools,ToolChoice toolChoice,Duration timeout){
+        this(messages,model,temperature,responseFormat,tools,toolChoice,timeout,null);
     }
     public static LlmRequest text(String text) {return builder().messages(List.of(LlmMessage.user(text))).build();}
     @Override public String toString() {return "LlmRequest[messages="+messages.size()+", tools="+tools.size()+", format="+responseFormat+"]";}

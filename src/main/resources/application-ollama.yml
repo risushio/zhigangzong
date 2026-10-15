@@ -11,6 +11,7 @@ app:
     read-timeout: 120s
     total-timeout: 150s
     supports-json-mode: true
+    supports-json-schema: true
     supports-tool-calling: false
     supports-strict-tools: false
     supports-parallel-tool-calls: false

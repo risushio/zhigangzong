@@ -8,6 +8,8 @@ import java.time.Duration;
 @Getter @Setter
 @ConfigurationProperties(prefix="app.llm",ignoreUnknownFields=false)
 public class LlmProperties {
+    /** Optional schema hints may strengthen JSON mode when the provider supports them. */
+    private boolean supportsJsonSchema = false;
     public enum TokenParameter { NONE, MAX_TOKENS, MAX_COMPLETION_TOKENS }
     private boolean enabled=false;
     private String provider="openai-compatible";

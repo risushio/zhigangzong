@@ -48,6 +48,15 @@ class OpenAiCompatibleLlmClientTest {
         assertEquals("000123",LlmJson.object(result.content()).path("code").asText());assertNull(result.usage());
         assertEquals("json_object",LlmJson.object(requests.remove()).path("response_format").path("type").asText());
     }
+    @Test void optionalSchemaHintUsesConfiguredCapabilityAndKeepsJavaJsonValidation(){
+        properties.setSupportsJsonMode(true);properties.setSupportsJsonSchema(true);reply(200,response("{\"code\":\"000123\"}"));
+        var schema=LlmJson.object("{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"string\"}}}");
+        var request=LlmRequest.text("JSON code 000123").toBuilder().responseFormat(LlmRequest.ResponseFormat.JSON_OBJECT).jsonSchemaHint(schema).build();
+        ((com.fasterxml.jackson.databind.node.ObjectNode)schema).put("private","must not leak into request");assertFalse(request.jsonSchemaHint().has("private"));
+        assertEquals("000123",LlmJson.object(client().chat(request).content()).path("code").asText());var wire=LlmJson.object(requests.remove());
+        assertEquals("json_schema",wire.path("response_format").path("type").asText());assertEquals("object",wire.path("response_format").path("json_schema").path("schema").path("type").asText());
+        properties.setSupportsJsonSchema(false);reply(200,response("{}"));client().chat(request);assertEquals("json_object",LlmJson.object(requests.remove()).path("response_format").path("type").asText());
+    }
     @Test void necessaryUnsupportedCapabilitiesFailBeforeAnyHttpRequest() {
         var client=client();assertEquals(UNSUPPORTED_CAPABILITY,assertThrows(LlmException.class,()->client.chat(LlmRequest.text("JSON").toBuilder().responseFormat(LlmRequest.ResponseFormat.JSON_OBJECT).build())).getCode());
         assertEquals(UNSUPPORTED_CAPABILITY,assertThrows(LlmException.class,()->client.chat(LlmRequest.text("tool").toBuilder().tools(List.of(tool())).build())).getCode());

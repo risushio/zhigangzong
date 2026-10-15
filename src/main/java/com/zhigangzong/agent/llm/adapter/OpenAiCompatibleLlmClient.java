@@ -60,6 +60,8 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
             ||!validTemperature(request.temperature())||(request.timeout()!=null&&!validDuration(request.timeout()))
             ||(request.model()!=null&&(request.model().isBlank()||request.model().length()>200)))
             throw error(INVALID_REQUEST,"聊天消息、参数或请求期限无效");
+        if(request.jsonSchemaHint()!=null&&(!request.jsonSchemaHint().isObject()||request.responseFormat()!=LlmRequest.ResponseFormat.JSON_OBJECT))
+            throw error(INVALID_REQUEST,"JSON Schema 提示必须为 JSON 输出模式的对象");
         boolean toolMessages=request.messages().stream().anyMatch(m->m.role()==LlmMessage.Role.TOOL||!m.toolCalls().isEmpty());
         if(request.responseFormat()==LlmRequest.ResponseFormat.JSON_OBJECT&&!properties.isSupportsJsonMode())
             throw error(UNSUPPORTED_CAPABILITY,"当前模型配置不支持必要的 JSON 输出能力");
@@ -105,7 +107,10 @@ public final class OpenAiCompatibleLlmClient implements LlmClient {
             case NONE -> {}
         }
         if(properties.getReasoningEffort()!=null&&!properties.getReasoningEffort().isBlank())body.put("reasoning_effort",properties.getReasoningEffort());
-        if(request.responseFormat()==LlmRequest.ResponseFormat.JSON_OBJECT)body.put("response_format",Map.of("type","json_object"));
+        if(request.responseFormat()==LlmRequest.ResponseFormat.JSON_OBJECT) {
+            if(request.jsonSchemaHint()!=null&&properties.isSupportsJsonSchema())body.put("response_format",Map.of("type","json_schema","json_schema",Map.of("name","structured_response","schema",request.jsonSchemaHint(),"strict",false)));
+            else body.put("response_format",Map.of("type","json_object"));
+        }
         if(!request.tools().isEmpty()) {
             body.put("tools",request.tools().stream().map(tool->{var fn=new LinkedHashMap<String,Object>();fn.put("name",tool.name());if(tool.description()!=null)fn.put("description",tool.description());fn.put("parameters",tool.parameters());if(properties.isSupportsStrictTools())fn.put("strict",tool.strict());return Map.of("type","function","function",fn);}).toList());
             if(properties.isSupportsParallelToolCalls())body.put("parallel_tool_calls",false);

@@ -4,7 +4,7 @@
 
 未发布的 Agent V1 按“数据库与业务 → LLM 接口 → Agent 集成”分阶段推进。无模型学生草稿与确认业务已在批准的隔离 MySQL 库通过验收，支持年级与文本班级，见 [第一阶段验收](docs/agent-phase1-workflow.md)。统一模型接口、Ollama 本地 Qwen 真实调用与 DeepSeek HTTP Mock 已验证，见 [第二阶段验收](docs/agent-phase2-workflow.md)；真实 DeepSeek 待配置提供后另验。本机业务库尚未升级。
 
-2026-10-14：第三阶段开发按用户要求暂停，当前 `codex/agent-v1-wip` 是进度快照。提取器和 DTO 尚缺，当前源码未通过构建与第三阶段验收；此前阶段测试结果不表示当前 WIP 可部署。后续工作见 [开发交接](docs/NEXT-STEPS.md)。
+2026-10-14：提取器与 DTO 已补齐，当前后端构建和 240 项测试通过（无失败、无跳过），包含 25 条本地 Qwen 真实提取样例及 DeepSeek HTTP Mock；前端语法检查和 15 项测试通过。按用户要求停止继续调整模型输入。最新修复后的实际聊天与页面完整流程未重跑，不登记第三阶段完整验收通过；真实 DeepSeek 仍待配置。本轮实现纳入 codex/agent-v1-wip 分支；业务库未升级。
 
 当前版本：**1.2.0**，新增 T10–T15 的岗位匹配、收藏反馈、范围规则、截止提醒、批次统计与学生 Excel 导入导出，范围与升级说明见 [1.2 发布说明](docs/releases/1.2.0.md)，版本历史见 [CHANGELOG](CHANGELOG.md)。本机数据库、账号密码与上传文件不随源码发布，新环境须自行配置 MySQL 和首个管理员。
 
